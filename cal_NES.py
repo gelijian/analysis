@@ -58,12 +58,12 @@ torus = Torus(R = 1.88*meters, k = 1.8)
 # the NUBEAM profiles are read as follows:
 
 ## create output directory
-device = "TOFED"
-# device = "EJ301"
+# device = "TOFED"
+device = "EJ301"
 campaign = "2018"
 dir_data = os.path.join("/home/gelijian/EAST/shot_data")
 dir_LOS = os.path.join(dir_data, "LOS")
-shot = 81513
+shot = 81512
 losfile = os.path.join(dir_LOS, "los_%s.File" % (device))
 dir_shot = os.path.join(dir_data, campaign, "%d" % shot)
 dir_sim = os.path.join(dir_shot, "simulation")

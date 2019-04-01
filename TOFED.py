@@ -6,7 +6,7 @@ from matplotlib.colors import LogNorm
 from scipy.stats import chisquare
 import shotanalysis as sa
 plt.style.use("classic")
-matplotlib.rcParams['font.size'] = 20
+matplotlib.rcParams['font.size'] = 18
 
 
 def LOP_s1(tof, theta):
@@ -25,27 +25,37 @@ device = "TOFED"
 campaign = "2018"
 shot = 81512
 dir_data = os.path.join("/home/gelijian/EAST/shot_data/", campaign)
+dir_figure = os.path.join("/home/gelijian/EAST/shot_data/figure")
 dir_shot = os.path.join(dir_data, "%d" % shot)
 dir_RF = "/home/gelijian/EAST/RF/TOFED"
 dir_parameters, dir_NES = sa.generate_dirs(dir_shot, device)
 Enlist = np.arange(500, 3520, 20)
+sa.TOFEDdata.set_dir_RF(dir_RF)
 # binedge = np.arange(-200, 200, 0.5)
 # fwhm_DAQ = np.sqrt(0.8**2 + 0.8**2 + 0.8**2)
 # sa.TOFEDdata.cal_RF(binedge, fwhm_DAQ)
-sa.PHdata.set_dir_RF(dir_RF)
-binedge, binmiddle, Enlist, matrix_RF = sa.PHdata.load_RF(Enlist)
+binedge, binmiddle, Enlist, matrix_RF = sa.TOFEDdata.load_RF(Enlist)
 
 # sim data
 NES_sim_dict, tof_sim_dict = sa.load_NES_sim(dir_NES, matrix_RF)
 
 
 # exp data
-tof_cfg = {sa.Digitizer.V1751: {"offset": 0.04, "th_s1": 50, "th_s2": 0},
-           sa.Digitizer.APV8508: {"offset": 0.04, "th_s1": 180, "th_s2": 0}
-           }
+tof_cfg = {
+    sa.Digitizer.V1751: {
+        sa.RingType.up: {"th_s1": 50, "p1": (10, 20), "p2": (55, 30)},
+        sa.RingType.bottom: {"th_s1": 50, "p1": (15, 25), "p2": (60, 40)}
+    },
+    sa.Digitizer.APV8508: {
+        sa.RingType.up: {"th_s1": 180, "p1": (15, 20), "p2": (50, 30)},
+        sa.RingType.bottom: {"th_s1": 180, "p1": (12, 25), "p2": (55, 40)},
+    }
+}
 
 # shotlist = np.loadtxt("goodshot")[:, 0]
-shotlist = [81512]
+# shotlist = [81512]
+shotlist = np.arange(81510, 81515)
+
 data_exp = np.empty((0, 5))
 for shot in shotlist:
     dir_shot = os.path.join(dir_data, "%d" % shot)
@@ -55,60 +65,41 @@ for shot in shotlist:
     data = np.loadtxt(filename)
     data_exp = np.vstack((data_exp, data))
 
-tof_exp = 0
-plt.figure()
-for k, v in tof_cfg.items():
-    data = data_exp[data_exp[:, 4] == k.value, :]
-    qls1 = data[:, 1]
-    qls2 = data[:, 2]
-    tof = data[:, 0]
-    idx = (qls1 > v["th_s1"]) & (qls2 > v["th_s2"]) | (tof > 75.5)
-    tof = data[idx, 0] + v["offset"]
-    histtof, bins = np.histogram(tof, bins=binedge)
-    tof_exp = tof_exp + histtof
-    plt.plot(binmiddle, histtof, label=k.name, lw=2)
-plt.xlim(-5, 20)
-plt.title("TOF bin width is 0.5 ns")
-plt.xlabel("time-of-flight [ns]")
-plt.ylabel("Counts/bin")
-plt.legend()
-plt.show()
+tof_exp_list = []
+tof_kin_list = []
+binedge_tof, binmiddle_tof = sa.generate_bins(-200, 200, 3)
+binedge_ql, binmiddle_ql = sa.generate_bins(0, 5000, 30)
+t = np.arange(10, 200, 0.1)
 
+for digitizer in sa.Digitizer:
+    for ring in sa.RingType:
+        idx_digitizer = data_exp[:, 4] == digitizer.value
+        idx_ring = data_exp[:, 3] == ring.value
+        data = data_exp[idx_digitizer & idx_ring, :]
+        tof = data[:, 0]
+        qls1 = data[:, 1]
 
-# binedge_tof, binmiddle_tof = sa.generate_bins(-200, 200, 3)
-# binedge_ql, binmiddle_ql = sa.generate_bins(0, 5000, 30)
-# tof_kin = []
-# for i in range(2):
-#     data = data_exp[i]
-#     tof = data[:, 0]
-#     qls1 = data[:, 1]
-#     qls2 = data[:, 2]
-#     if i == 0:
-#         k1 = 0
-#         k2 = 30
-#     if i == 1:
-#         k1 = 10
-#         k2 = 100
-#     t = np.arange(10, 200, 0.1)
-#     l1 = k1 * LOP_s1(t, theta=20)
-#     l2 = k2 * LOP_s1(t, theta=40)
-#     i1 = qls1 > k1 * LOP_s1(tof, theta=15)
-#     i2 = qls1 < k2 * LOP_s1(tof, theta=45)
-#     i3 = tof < 50
-#     i4 = tof > 90
-#     idx = (i1 & i2) | i3 | i4
-#     tof_kin = np.append(tof_kin, tof[idx] + offset[i])
-#     plt.figure()
-#     plt.plot(t, l1, "r-", lw=2)
-#     plt.plot(t, l2, "r-", lw=2)
-#     plt.hist2d(tof, qls1, bins=(binedge_tof, binedge_ql), norm=LogNorm())
-#     plt.colorbar()
-#     plt.title(DGZ_type[i])
-#     plt.xlabel("time-of-flight [ns]")
-#     plt.ylabel("Qlong of s1")
-#     plt.xlim(-50, 150)
-#     plt.show()
-#     plt.close()
+        p1 = tof_cfg[digitizer][ring]["p1"]
+        p2 = tof_cfg[digitizer][ring]["p2"]
+        idx1 = qls1 > p1[0] * LOP_s1(tof, p1[1])
+        idx2 = qls1 < p2[0] * LOP_s1(tof, p2[1])
+        # i3 = tof < 50
+        # i4 = tof > 90
+        # idx = (i1 & i2) | i3 | i4
+        # tof_kin = np.append(tof_kin, tof[idx] + offset[i])
+        tof_exp_list = np.append(tof_exp_list, tof)
+        tof_kin_list = np.append(tof_kin_list, tof[idx1 & idx2])
+        plt.figure()
+        plt.plot(t, p1[0] * LOP_s1(t, p1[1]), "r-", lw=2)
+        plt.plot(t, p2[0] * LOP_s1(t, p2[1]), "r-", lw=2)
+        plt.hist2d(tof, qls1, bins=(binedge_tof, binedge_ql), norm=LogNorm())
+        plt.colorbar()
+        plt.title("%s of %s" % (ring.name, digitizer.name))
+        plt.xlabel("time-of-flight [ns]")
+        plt.ylabel("Qlong of s1")
+        # plt.xlim(-50, 150)
+        plt.show()
+        plt.close()
 
 
 # En spectrum
@@ -126,14 +117,17 @@ plt.show()
 
 
 # TOF exp
+tof_exp, bins = np.histogram(tof_exp_list, bins=binedge)
+tof_kin, bins = np.histogram(tof_kin_list, bins=binedge)
 plt.figure()
 plt.errorbar(binmiddle, tof_exp, yerr=np.sqrt(tof_exp), fmt="ko", lw=1.5, label="Measurement", markersize=7, capsize=4)
+plt.plot(binmiddle, tof_kin, "r-", lw = 2, label="DKS")
 plt.xlabel("time-of-flight [ns]")
 plt.ylabel("Counts / bin")
 plt.xlim(-100, 120)
 plt.ylim(0, )
 plt.legend(fontsize=17)
-# plt.savefig("TOFED_exp_sim_neutron.eps", dpi=600)
+plt.savefig(os.path.join(dir_figure, "TOFED_exp_sim.eps"), dpi=600)
 plt.show()
 
 

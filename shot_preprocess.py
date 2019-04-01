@@ -15,7 +15,7 @@ s2up = [5, 6, 8, 9]
 s2bottom = [10, 11, 12, 13, 14]
 reflist = [7, 15]
 
-shotlist = np.arange(75085, 75180)
+shotlist = np.arange(75030, 75080)
 for shot in shotlist:
     dir_shot = os.path.join(dir_data, "%d" % shot)
     print(dir_shot)
@@ -49,7 +49,7 @@ for shot in shotlist:
     for DGZ_type in sa.Digitizer:
         file_div = os.path.join(dir_data, "%s_divergence_old" % sa.DGZ_cfg[DGZ_type]["name"])
         m.set_DGZ_type(DGZ_type)
-        m.cal_board_offset(reflist)
+        # m.cal_board_offset(reflist)
         m.load_board_offset()
         m.load_divergence(file_div)
         data = m.load_pairs(s1list, s2list, include_divergence=True)
