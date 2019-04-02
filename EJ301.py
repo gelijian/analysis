@@ -9,16 +9,16 @@ import shotanalysis as sa
 plt.style.use("classic")
 matplotlib.rcParams['font.size'] = 18
 
-device = "EJ301"
-campaign = "2017"
-shot = 75164
-k = 6.9
-# k = 19.4
+instrument = "EJ301"
+campaign = "2018"
+shot = 81512
+# k = 6.9
+k = 19.5
 dir_shot = os.path.join("/home/gelijian/EAST/shot_data", campaign, "%d" % shot)
 dir_figure = "/home/gelijian/EAST/shot_data/figure"
-dir_parameters, dir_NES = sa.generate_dirs(dir_shot, device)
+dir_parameters, dir_NES = sa.generate_dirs(dir_shot, instrument)
 Enlist = np.arange(500, 3520, 20)
-dir_RF = "/home/gelijian/EAST/RF/EJ301"
+dir_RF = "/home/gelijian/EAST/shot_data/RF/EJ301"
 sa.PHdata.set_dir_RF(dir_RF)
 binedge, binmiddle, Enlist, matrix_RF = sa.PHdata.load_RF(Enlist)
 
@@ -44,7 +44,7 @@ plt.ylim(0, 0.4)
 plt.ylabel("PSD factor [a.u.]")
 plt.xlabel("Light output [keV]")
 plt.tight_layout()
-plt.savefig(os.path.join(dir_figure, "PSD_%s_%d.png" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_figure, "png", "PSD_%s_%d.png" % (instrument, shot)), dpi=600)
 plt.show()
 
 # En spectrum
@@ -55,10 +55,9 @@ for key, NES in NES_sim_dict.items():
 plt.xlabel("En [keV]")
 plt.ylabel("dN/dE [a.u.]")
 plt.xlim(1500, 3500)
-plt.ylim(0, 0.8)
+plt.ylim(0, 1.0)
 plt.legend(loc="best", fontsize=16)
-plt.savefig(os.path.join(dir_figure, "NES_%s_%d.eps" % (device, shot)), dpi=600)
-plt.savefig(os.path.join(dir_figure, "NES_%s_%d.png" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_figure, "eps", "NES_%s_%d.eps" % (instrument, shot)), dpi=600)
 plt.show()
 
 # PHSexp vs sim
@@ -77,8 +76,7 @@ plt.xlim(200, 900)
 plt.ylim(0, 2000)
 plt.ylim(10, 10000)
 plt.yscale("log")
-plt.savefig(os.path.join(dir_figure, "PHS_%s_%d.eps" % (device, shot)), dpi=600)
-plt.savefig(os.path.join(dir_figure, "PHS_%s_%d.png" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_figure, "eps", "PHS_%s_%d.eps" % (instrument, shot)), dpi=600)
 plt.show()
 
 # linear
@@ -90,9 +88,8 @@ plt.legend(loc="best", fontsize=16)
 plt.xlabel("Light output [keVee]")
 plt.ylabel("Counts")
 plt.xlim(200, 900)
-plt.ylim(0, 600)
-plt.savefig(os.path.join(dir_figure, "PHS_linear_%s_%d.eps" % (device, shot)), dpi=600)
-plt.savefig(os.path.join(dir_figure, "PHS_linear_%s_%d.png" % (device, shot)), dpi=600)
+plt.ylim(0, 2000)
+plt.savefig(os.path.join(dir_figure, "eps", "PHS_linear_%s_%d.eps" % (instrument, shot)), dpi=600)
 plt.show()
 
 

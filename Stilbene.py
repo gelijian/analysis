@@ -9,15 +9,15 @@ import shotanalysis as sa
 plt.style.use("classic")
 matplotlib.rcParams['font.size'] = 18
 
-device = "Stilbene"
+instrument = "Stilbene"
 campaign = "2018"
-shot = 81513
-# k = 6.95
-k = 15
+shot = 81512
+k = 15.0
+dir_figure = "/home/gelijian/EAST/shot_data/figure"
 dir_shot = os.path.join("/home/gelijian/EAST/shot_data", campaign, "%d" % shot)
-dir_parameters, dir_NES= sa.generate_dirs(dir_shot, device)
+dir_parameters, dir_NES= sa.generate_dirs(dir_shot, instrument)
 Enlist = np.arange(500, 3520, 20)
-dir_RF = "/home/gelijian/EAST/RF/" + device
+dir_RF = "/home/gelijian/EAST/shot_data/RF/Stilbene"
 sa.PHdata.set_dir_RF(dir_RF)
 binedge, binmiddle, Enlist, matrix_RF = sa.PHdata.load_RF(Enlist)
 
@@ -25,7 +25,7 @@ binedge, binmiddle, Enlist, matrix_RF = sa.PHdata.load_RF(Enlist)
 NES_sim_dict, phs_sim_dict = sa.load_NES_sim(dir_NES, matrix_RF)
 
 # exp data
-file_exp = os.path.join(dir_shot, "%s_data" % device)
+file_exp = os.path.join(dir_shot, "%s_data" % instrument)
 m = sa.PHdata()
 m.loaddata(file_exp, k=k, b=0)
 range_Eee = np.array([100, 1500])
@@ -39,42 +39,42 @@ binedge_psd, binmiddle_psd = sa.generate_bins(0, 0.4, 0.003)
 fig = plt.figure()
 plt.hist2d(m.ph, m.psd, bins=[binedge_ph, binedge_psd], norm=LogNorm())
 plt.colorbar()
-plt.ylim(0, 0.36)
-plt.ylabel("PSD [a.u.]")
+plt.ylim(0, 0.40)
+plt.ylabel("PSD factor [a.u.]")
 plt.xlabel("Light output [keV]")
 plt.tight_layout()
-plt.savefig(os.path.join(dir_shot, "PSD_%s_%d.png" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_figure, "png", "PSD_%s_%d.png" % (instrument, shot)), dpi=600)
 plt.show()
 
 # En spectrum
-# r = 1.0 / NES_sim_dict["total"].max()
+r = 1.0 / NES_sim_dict[sa.Component.total].max()
 plt.figure()
 for key, NES in NES_sim_dict.items():
-    plt.step(Enlist, NES, sa.cfg[key]["style"], label=sa.cfg[key]["label"], lw=3)
+    plt.step(Enlist, NES, sa.CPT_cfg[key]["style"], label=sa.CPT_cfg[key]["label"], lw=3)
 plt.xlabel("En [keV]")
 plt.ylabel("dN/dE [a.u.]")
 plt.xlim(1500, 3500)
 plt.ylim(0, 1.2)
 plt.legend(loc="best", fontsize=16)
-plt.savefig(os.path.join(dir_shot, "NES_%s_%d.eps" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_figure, "eps", "NES_%s_%d.eps" % (instrument, shot)), dpi=600)
 plt.show()
 
 # PHSexp vs sim
-idx = (binmiddle > 200) & (binmiddle < 500)
-r, cash = sa.min_cash(phs_exp[idx], phs_sim_dict["total"][idx])
+idx = (binmiddle > 100) & (binmiddle < 550)
+r, cash = sa.min_cash(phs_exp[idx], phs_sim_dict[sa.Component.total][idx])
 print(r, cash)
 plt.figure()
 plt.errorbar(binmiddle, phs_exp, yerr=np.sqrt(phs_exp), fmt="ko", label="Measurement", markersize=7, capsize=4)
 for key, y_sim in phs_sim_dict.items():
-    plt.plot(binmiddle, y_sim * r, sa.cfg[key]["style"], label=sa.cfg[key]["label"], lw=4)
+    plt.plot(binmiddle, y_sim * r, sa.CPT_cfg[key]["style"], label=sa.CPT_cfg[key]["label"], lw=4)
 plt.legend(loc="best", fontsize=16)
 plt.xlabel("Light output [keVee]")
 plt.ylabel("Counts")
-plt.xlim(200, 700)
-plt.ylim(0, 800)
+plt.xlim(100, 700)
+plt.ylim(0, 500)
 # plt.ylim(10, 10000)
 # plt.yscale("log")
-plt.savefig(os.path.join(dir_shot, "PHS_%s_%d.eps" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_figure, "eps", "PHS_%s_%d.eps" % (instrument, shot)), dpi=600)
 plt.show()
 
 

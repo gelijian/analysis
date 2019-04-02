@@ -9,9 +9,9 @@ matplotlib.rcParams['font.size'] = 18
 dir_data = os.path.join("/home/gelijian/EAST/shot_data")
 campaign = "2017"
 device = "TOFED"
-device = "EJ301"
+# device = "EJ301"
 # device = "Stilbene"
-shot = 75164
+shot = 75071
 dir_MCNP = os.path.join(dir_data, "MCNP", device)
 dir_shot = os.path.join(dir_data, campaign, "%d" % shot)
 dir_device = os.path.join(dir_shot, "simulation", device)
@@ -31,9 +31,9 @@ file_direct = os.path.join(dir_NES, "direct")
 direct = np.loadtxt(file_direct)[:, 1]
 ratio = direct.sum() / direct_mcnp.sum()
 if device is "EJ301":
-    reduced_ratio = 1.5
+    reduced_ratio = 1.0
 elif device is "TOFED":
-    reduced_ratio = 0.8
+    reduced_ratio = 0.3
 else:
     print("input TOFED or EJ301")
     sys.exit(0)

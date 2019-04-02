@@ -21,17 +21,17 @@ def LOP_s1(tof, theta):
     return loutput
 
 
-device = "TOFED"
+instrument = "TOFED"
 campaign = "2018"
 shot = 81512
 dir_data = os.path.join("/home/gelijian/EAST/shot_data/", campaign)
 dir_figure = os.path.join("/home/gelijian/EAST/shot_data/figure")
 dir_shot = os.path.join(dir_data, "%d" % shot)
-dir_RF = "/home/gelijian/EAST/RF/TOFED"
-dir_parameters, dir_NES = sa.generate_dirs(dir_shot, device)
+dir_RF = "/home/gelijian/EAST/shot_data/RF/TOFED"
+dir_parameters, dir_NES = sa.generate_dirs(dir_shot, instrument)
 Enlist = np.arange(500, 3520, 20)
-sa.TOFEDdata.set_dir_RF(dir_RF)
-# binedge = np.arange(-200, 200, 0.5)
+# sa.TOFEDdata.set_dir_RF(dir_RF)
+# binedge = np.arange(-200, 200, 0.4)
 # fwhm_DAQ = np.sqrt(0.8**2 + 0.8**2 + 0.8**2)
 # sa.TOFEDdata.cal_RF(binedge, fwhm_DAQ)
 binedge, binmiddle, Enlist, matrix_RF = sa.TOFEDdata.load_RF(Enlist)
@@ -43,18 +43,18 @@ NES_sim_dict, tof_sim_dict = sa.load_NES_sim(dir_NES, matrix_RF)
 # exp data
 tof_cfg = {
     sa.Digitizer.V1751: {
-        sa.RingType.up: {"th_s1": 50, "p1": (10, 20), "p2": (55, 30)},
-        sa.RingType.bottom: {"th_s1": 50, "p1": (15, 25), "p2": (60, 40)}
+        sa.RingType.up: {"th_s1": 150, "p1": (15, 20), "p2": (55, 30)},
+        sa.RingType.bottom: {"th_s1": 150, "p1": (12, 25), "p2": (65, 40)}
     },
     sa.Digitizer.APV8508: {
-        sa.RingType.up: {"th_s1": 180, "p1": (15, 20), "p2": (50, 30)},
-        sa.RingType.bottom: {"th_s1": 180, "p1": (12, 25), "p2": (55, 40)},
+        sa.RingType.up: {"th_s1": 250, "p1": (15, 20), "p2": (40, 30)},
+        sa.RingType.bottom: {"th_s1": 250, "p1": (12, 25), "p2": (40, 40)},
     }
 }
 
-# shotlist = np.loadtxt("goodshot")[:, 0]
-# shotlist = [81512]
-shotlist = np.arange(81510, 81515)
+shotlist = np.loadtxt("goodshot")[:, 0]
+shotlist = [81512]
+# shotlist = np.arange(81510, 81515)
 
 data_exp = np.empty((0, 5))
 for shot in shotlist:
@@ -83,12 +83,10 @@ for digitizer in sa.Digitizer:
         p2 = tof_cfg[digitizer][ring]["p2"]
         idx1 = qls1 > p1[0] * LOP_s1(tof, p1[1])
         idx2 = qls1 < p2[0] * LOP_s1(tof, p2[1])
-        # i3 = tof < 50
-        # i4 = tof > 90
-        # idx = (i1 & i2) | i3 | i4
-        # tof_kin = np.append(tof_kin, tof[idx] + offset[i])
-        tof_exp_list = np.append(tof_exp_list, tof)
-        tof_kin_list = np.append(tof_kin_list, tof[idx1 & idx2])
+        idx_th = qls1 > tof_cfg[digitizer][ring]["th_s1"]
+
+        tof_exp_list = np.append(tof_exp_list, tof + 0.1)
+        tof_kin_list = np.append(tof_kin_list, tof[idx_th & idx1 & idx2] + 0.1)
         plt.figure()
         plt.plot(t, p1[0] * LOP_s1(t, p1[1]), "r-", lw=2)
         plt.plot(t, p2[0] * LOP_s1(t, p2[1]), "r-", lw=2)
@@ -112,7 +110,7 @@ plt.ylabel("dN/dE [a.u.]")
 plt.xlim(1500, 3500)
 plt.ylim(0, 1.2)
 plt.legend(loc="best", fontsize=16)
-plt.savefig(os.path.join(dir_shot, "NES_%s_%d.eps" % (device, shot)), dpi=600)
+plt.savefig(os.path.join(dir_shot, "NES_%s_%d.eps" % (instrument, shot)), dpi=600)
 plt.show()
 
 
@@ -124,17 +122,18 @@ plt.errorbar(binmiddle, tof_exp, yerr=np.sqrt(tof_exp), fmt="ko", lw=1.5, label=
 plt.plot(binmiddle, tof_kin, "r-", lw = 2, label="DKS")
 plt.xlabel("time-of-flight [ns]")
 plt.ylabel("Counts / bin")
-plt.xlim(-100, 120)
-plt.ylim(0, )
+plt.xlim(50, 100)
+plt.ylim(0, 80)
 plt.legend(fontsize=17)
-plt.savefig(os.path.join(dir_figure, "TOFED_exp_sim.eps"), dpi=600)
+plt.savefig(os.path.join(dir_figure, "eps", "TOFED_DKS.eps"), dpi=600)
 plt.show()
 
 
+tof_exp = tof_kin
 # TOF exp vs sim
-idx = sa.inrange(binmiddle, (30, 50))
-bg = np.floor(tof_exp[idx].mean()) + 0.5
-idx = sa.inrange(binmiddle, (65, 85))
+idx = sa.inrange(binmiddle, (-100, -50))
+bg = np.floor(tof_exp[idx].mean()) - 1.5
+idx = sa.inrange(binmiddle, (65, 80))
 tof_exp = np.abs(tof_exp - bg)
 r, cash = sa.min_cash(tof_exp[idx], tof_sim_dict[sa.Component.total][idx])
 print(r, cash)
@@ -147,7 +146,7 @@ plt.ylabel("Counts / bin")
 plt.xlim(60, 90)
 plt.ylim(0, tof_exp[idx].max() * 1.1)
 plt.legend(fontsize=17)
-# plt.savefig("TOFED_exp_sim_neutron.eps", dpi=600)
+plt.savefig(os.path.join(dir_figure, "eps", "TOFED_exp_sim.eps"), dpi=600)
 plt.show()
 
 
